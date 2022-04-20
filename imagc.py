@@ -1,15 +1,16 @@
-from PIL import Image, ImageFilter, ImageFont, ImageDraw, ImageGrab, GifImagePlugin, ImageOps
+from PIL import Image, ImageFilter, ImageFont, ImageDraw, ImageGrab, GifImagePlugin, ImageOps, ImageSequence
 import requests
 import click
 import win32clipboard
 import win32con
+import io
 from io import BytesIO
 
 @click.group()
 def imagc():
-    pass
+    pass    
 
-def GetImage(file):
+def get_image(file):
     try:
         r = requests.get(file, stream=True)
         if r.status_code != 200:
@@ -29,23 +30,35 @@ def send_to_clipboard(img):
     win32clipboard.SetClipboardData(win32con.CF_DIB, data)
     win32clipboard.CloseClipboard()
 
-def AddCaption(captiontop, captionbottom, img):
+def add_caption(captiontop, captionbottom, img):
     #captiontop = ""
     #captionbottom = ""
+    frames = []
+    FONT = "C:\\Run\\requirements\\impact.ttf"
     h, w = img.size
-    draw = ImageDraw.Draw(img)
     font_size = round(w/6)
-    font = ImageFont.truetype("C:\\Run\\requirements\\impact.ttf", size=font_size)
+    font = ImageFont.truetype(FONT, size=font_size)
     while True: 
         if font.getlength(captiontop) >=w or font.getlength(captionbottom) >= w:
             font_size -= 1
             print(font_size)
-            font = ImageFont.truetype("C:\\Run\\requirements\\impact.ttf", size=font_size)
+            font = ImageFont.truetype(FONT, size=font_size)
         else:
-            font = ImageFont.truetype("C:\\Run\\requirements\\impact.ttf", size=font_size)
+            if hasattr(img, 'is_animated') and img.is_animated:
+                for frame in ImageSequence.Iterator(img):
+                    frame.seek(0)
+                    img = frame.copy()
+                    img = img.convert("RGBA")
+                    img.save("out.png", "PNG")
+                    break
+
+            draw = ImageDraw.Draw(img)
             draw.text((h/2, w/20), text=captiontop, fill=(255,)*3, anchor="mt", font=font, stroke_fill=(0, 0, 0), stroke_width=round(0.05*font_size))
             draw.text((h/2, w-(w/20)), text=captionbottom, fill=(255,)*3, anchor="ms", font=font, stroke_fill=(0, 0, 0), stroke_width=round(0.05*font_size))
-            return
+
+            img.save("final.png")
+
+            return img
    
 
 @imagc.command()
@@ -54,12 +67,12 @@ def AddCaption(captiontop, captionbottom, img):
 @click.argument('bottomtext', required=False, default="")
 def cap(image, toptext, bottomtext):
     #toptext = " ".join(toptext)
-    img = GetImage(image)
+    img = get_image(image)
 
-    if hasattr(img, 'is_animated'):
+    if hasattr(img, 'is_animated') and img.is_animated:
         print("[WARNING] Image is animated. This can cause problems!")
-    
-    AddCaption(captiontop=toptext, captionbottom=bottomtext, img=img)
+
+    img = add_caption(captiontop=toptext, captionbottom=bottomtext, img=img)
     
     img.show()
     send_to_clipboard(img=img)
@@ -71,7 +84,8 @@ def cap(image, toptext, bottomtext):
 @click.argument('bottomtext', required=False, default="")
 def filter(image, amount, toptext, bottomtext):
     """Adds a lot of Edge Enchancing to image"""
-    img = GetImage(image)
+    
+    img = get_image(image)
     amount = round(int(amount))
     try:
         for x in range(amount):
@@ -79,7 +93,7 @@ def filter(image, amount, toptext, bottomtext):
     except ValueError:
         return print("Can not use filters on given file format")
     
-    AddCaption(captiontop=toptext, captionbottom=bottomtext, img=img)
+    img = add_caption(captiontop=toptext, captionbottom=bottomtext, img=img)
     
     img.show()
     send_to_clipboard(img=img)
@@ -91,7 +105,7 @@ def filter(image, amount, toptext, bottomtext):
 @click.argument('bottomtext', required=False, default="")
 def filter2(image, amount, toptext, bottomtext):
     """Adds Emboss to image"""
-    img = GetImage(image)
+    img = get_image(image)
     amount = round(int(amount))
     try:
         for x in range (amount):
@@ -99,7 +113,7 @@ def filter2(image, amount, toptext, bottomtext):
     except ValueError:
         return print("Can not use filters on given file format")
     
-    AddCaption(captiontop=toptext, captionbottom=bottomtext, img=img)
+    img = add_caption(captiontop=toptext, captionbottom=bottomtext, img=img)
     
     img.show()
     send_to_clipboard(img=img)
@@ -111,7 +125,7 @@ def filter2(image, amount, toptext, bottomtext):
 @click.argument('bottomtext', required=False, default="")
 def filter3(image, amount, toptext, bottomtext):
     """Adds Contour to image"""
-    img = GetImage(image)
+    img = get_image(image)
     amount = round(int(amount))
     try:
         for x in range (amount):
@@ -119,7 +133,7 @@ def filter3(image, amount, toptext, bottomtext):
     except ValueError:
         return print("Can not use filters on given file format")
 
-    AddCaption(captiontop=toptext, captionbottom=bottomtext, img=img)
+    img = add_caption(captiontop=toptext, captionbottom=bottomtext, img=img)
 
     img.show()
     send_to_clipboard(img=img)
@@ -131,7 +145,7 @@ def filter3(image, amount, toptext, bottomtext):
 @click.argument('bottomtext', required=False, default="")
 def filter4(image, amount, toptext, bottomtext):
     """Combines all 3 previous filters together"""
-    img = GetImage(image)
+    img = get_image(image)
     amount = round(int(amount))
     try:
         for x in range(amount):
@@ -141,7 +155,7 @@ def filter4(image, amount, toptext, bottomtext):
     except ValueError:
         return print("Can not use filters on given file format")
     
-    AddCaption(captiontop=toptext, captionbottom=bottomtext, img=img)
+    img = add_caption(captiontop=toptext, captionbottom=bottomtext, img=img)
     
     img.show()
     send_to_clipboard(img=img)
@@ -152,7 +166,7 @@ def filter4(image, amount, toptext, bottomtext):
 @click.argument('bottomtext', required=False, default="")
 def grayscale(image, toptext, bottomtext):
     """Grayscale an image"""
-    img = GetImage(image)
+    img = get_image(image)
     
     try:
 
@@ -161,7 +175,7 @@ def grayscale(image, toptext, bottomtext):
     except ValueError:
         return print("Can not use filters on given file format")
 
-    AddCaption(captiontop=toptext, captionbottom=bottomtext, img=img)
+    img = add_caption(captiontop=toptext, captionbottom=bottomtext, img=img)
     
     img.show()
     send_to_clipboard(img=img)
@@ -173,13 +187,13 @@ def grayscale(image, toptext, bottomtext):
 @click.argument('toptext', required=False, default="")
 @click.argument('bottomtext', required=False, default="")
 def resize(image, height, width, toptext, bottomtext):
-    img = GetImage(image)
+    img = get_image(image)
     height = round(int(height))
     width = round(int(width))
   
     img = img.resize(size=(width, height))
 
-    AddCaption(captiontop=toptext, captionbottom=bottomtext, img=img)
+    img = add_caption(captiontop=toptext, captionbottom=bottomtext, img=img)
     
     img.show()
     send_to_clipboard(img=img)
