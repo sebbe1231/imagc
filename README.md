@@ -3,7 +3,7 @@
 Required:
 - click
 - pywin32
-- PIL
+- pillow
 
 Works only for windows due to Win32
 
