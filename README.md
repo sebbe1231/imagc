@@ -3,8 +3,7 @@
 Required:
 - click >>>pip install click
 - pywin32 >>>pip install pywin32
-- pillow >>>pip install pillow
-  You cannot have PIL and pillow installed at the same time
+- pillow >>>pip install pillow (You cannot have PIL and pillow installed at the same time)
 
 Works only for windows due to Win32
 
