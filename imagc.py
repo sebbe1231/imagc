@@ -1,9 +1,8 @@
-from PIL import Image, ImageFilter, ImageFont, ImageDraw, ImageGrab, GifImagePlugin, ImageOps, ImageSequence
+from PIL import Image, ImageFilter, ImageFont, ImageDraw, ImageOps, ImageSequence
 import requests
 import click
 import win32clipboard
 import win32con
-import io
 from io import BytesIO
 
 @click.group()
@@ -31,8 +30,7 @@ def send_to_clipboard(img):
     win32clipboard.CloseClipboard()
 
 def add_caption(captiontop, captionbottom, img):
-    #captiontop = ""
-    #captionbottom = ""
+    #captiontop = ""    #captionbottom = ""
     frames = []
     FONT = "C:\\Run\\requirements\\impact.ttf"
     h, w = img.size
@@ -66,7 +64,7 @@ def add_caption(captiontop, captionbottom, img):
 @click.argument('toptext', required=False, default="")
 @click.argument('bottomtext', required=False, default="")
 def cap(image, toptext, bottomtext):
-    #toptext = " ".join(toptext)
+    """Adds top text and bottom text to and image"""
     img = get_image(image)
 
     if hasattr(img, 'is_animated') and img.is_animated:
@@ -76,6 +74,31 @@ def cap(image, toptext, bottomtext):
     
     img.show()
     send_to_clipboard(img=img)
+
+@imagc.command()
+@click.argument('image', nargs=1)
+@click.argument('width', nargs=1)
+def asciify(image, width: int):
+    image = get_image(image)
+    width = round(int(width))
+    image = image.resize((width, round(width/2)))
+    print(image.size)
+
+    image = image.convert("L")
+    pixels = image.getdata()
+    imgchars = ["$", "@", "B", "%", "8", "&", "W", "M", "#", "*", "o", "a", "h", "k", "b", "d", "p", "q", "w", "m", "Z", "O", "0", "Q", "L", "C", "J", "U", "Y", "X", "z", "c", "v", "u", "n", "x", "r", "j", "f", "t", "/", "\\", "|", "(", ")", "1", "{", "}", "[", "]", "?", "-", "_", "+", "~", "<", ">", "i", "!", "l", "I", ";", ":", "\"", "^", "`", "'", ".", " "][::-1]
+    ascii_img = ""
+
+    for i, pixel in enumerate(pixels):
+        if i%width == 0:
+            ascii_img += "\n"
+        ascii_img += imgchars[int(pixel/256*len(imgchars))]
+
+    print(ascii_img)
+    win32clipboard.OpenClipboard()
+    win32clipboard.EmptyClipboard()
+    win32clipboard.SetClipboardText(ascii_img)
+    win32clipboard.CloseClipboard()
 
 @imagc.command()
 @click.argument('image', nargs=1)
@@ -187,6 +210,7 @@ def grayscale(image, toptext, bottomtext):
 @click.argument('toptext', required=False, default="")
 @click.argument('bottomtext', required=False, default="")
 def resize(image, height, width, toptext, bottomtext):
+    """Resize an image"""
     img = get_image(image)
     height = round(int(height))
     width = round(int(width))
