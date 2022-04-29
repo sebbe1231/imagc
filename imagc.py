@@ -79,6 +79,7 @@ def cap(image, toptext, bottomtext):
 @click.argument('image', nargs=1)
 @click.argument('width', nargs=1)
 def asciify(image, width: int):
+    """Make and image into ascii"""
     image = get_image(image)
     width = round(int(width))
     image = image.resize((width, round(width/2)))
@@ -222,7 +223,13 @@ def resize(image, height, width, toptext, bottomtext):
     img.show()
     send_to_clipboard(img=img)
 
+@imagc.command()
+def empty():
+    """Empty your clipboard if needed for some reason"""
+    win32clipboard.OpenClipboard()
+    win32clipboard.EmptyClipboard()
+    win32clipboard.CloseClipboard()
+    print("Emptied clipboard")
 
 if __name__ == '__main__':
     imagc()    
-
