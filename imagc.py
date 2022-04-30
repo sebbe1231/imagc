@@ -16,8 +16,11 @@ def get_image(file):
             raise
         return Image.open(r.raw)
     except:
-        print("Image could not be loaded")
-        exit(1)
+        try:
+            return Image.open(file)
+        except:
+            print("Image could not be loaded")
+            exit(1)
 
 def send_to_clipboard(img):
     output = BytesIO()
@@ -233,3 +236,4 @@ def empty():
 
 if __name__ == '__main__':
     imagc()    
+
