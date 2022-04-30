@@ -1,8 +1,8 @@
-from PIL import Image, ImageFilter, ImageFont, ImageDraw, ImageOps, ImageSequence
+from PIL import Image, ImageFilter, ImageFont, ImageDraw, ImageOps, ImageSequence, ImageGrab
 import requests
 import click
-import win32clipboard
-import win32con
+import win32clipboard, win32con, win32gui
+import time
 from io import BytesIO
 
 @click.group()
@@ -10,6 +10,19 @@ def imagc():
     pass    
 
 def get_image(file):
+    if file == "clpbrd":
+        if ImageGrab.grabclipboard() is None:
+            print("No image file was found in your clipboard data!")
+            exit(1)
+        return ImageGrab.grabclipboard()
+    if file == "screen":
+        win32gui.ShowWindow(win32gui.GetForegroundWindow(), win32con.SW_MINIMIZE)
+        time.sleep(1)
+        return ImageGrab.grab(all_screens=False)
+    if file == "allscreen":
+        win32gui.ShowWindow(win32gui.GetForegroundWindow(), win32con.SW_MINIMIZE)
+        time.sleep(1)
+        return ImageGrab.grab(all_screens=True)
     try:
         r = requests.get(file, stream=True)
         if r.status_code != 200:
@@ -67,7 +80,13 @@ def add_caption(captiontop, captionbottom, img):
 @click.argument('toptext', required=False, default="")
 @click.argument('bottomtext', required=False, default="")
 def cap(image, toptext, bottomtext):
-    """Adds top text and bottom text to and image"""
+    """Adds top text and bottom text to and image
+    
+    \b
+    Set image as "clpbrd" to get the image from your clipboard
+    Set image as "screen" to get a screenshot of your primary screen
+    Set image as "allscreen" to get a screenshot of all your screens in one
+    """
     img = get_image(image)
 
     if hasattr(img, 'is_animated') and img.is_animated:
