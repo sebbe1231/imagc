@@ -3,7 +3,10 @@ import requests
 import click
 import win32clipboard, win32con, win32gui
 import time
+import io
 from io import BytesIO
+import os
+from math import sqrt
 
 @click.group()
 def imagc():
@@ -99,29 +102,34 @@ def cap(image, toptext, bottomtext):
 
 @imagc.command()
 @click.argument('image', nargs=1)
-@click.argument('width', nargs=1)
+@click.argument('width', nargs=1, required=False)
 def asciify(image, width: int):
     """Make and image into ascii"""
     image = get_image(image)
-    width = round(int(width))
-    image = image.resize((width, round(width/2)))
-    print(image.size)
+    iw, ih = image.size
+    if width is not None:
+        width = round(int(width))
+        height = round(width/2)
+    else:
+        height = os.get_terminal_size().lines
+        width = round(height*(iw/ih)*1.55)
+    
+    for frame in ImageSequence.Iterator(image):
+        b = io.BytesIO()
+        frame.save(b, format="GIF")
+        frame = Image.open(b)
 
-    image = image.convert("L")
-    pixels = image.getdata()
-    imgchars = ["$", "@", "B", "%", "8", "&", "W", "M", "#", "*", "o", "a", "h", "k", "b", "d", "p", "q", "w", "m", "Z", "O", "0", "Q", "L", "C", "J", "U", "Y", "X", "z", "c", "v", "u", "n", "x", "r", "j", "f", "t", "/", "\\", "|", "(", ")", "1", "{", "}", "[", "]", "?", "-", "_", "+", "~", "<", ">", "i", "!", "l", "I", ";", ":", "\"", "^", "`", "'", ".", " "][::-1]
-    ascii_img = ""
+        frame = frame.resize((width, height))
+        frame = frame.convert("L")
+        pixels = frame.getdata()
+        imgchars = ["$", "@", "B", "%", "8", "&", "W", "M", "#", "*", "o", "a", "h", "k", "b", "d", "p", "q", "w", "m", "Z", "O", "0", "Q", "L", "C", "J", "U", "Y", "X", "z", "c", "v", "u", "n", "x", "r", "j", "f", "t", "/", "\\", "|", "(", ")", "1", "{", "}", "[", "]", "?", "-", "_", "+", "~", "<", ">", "i", "!", "l", "I", ";", ":", "\"", "^", "`", "'", ".", " "][::-1]
+        ascii_img = ""
 
-    for i, pixel in enumerate(pixels):
-        if i%width == 0:
-            ascii_img += "\n"
-        ascii_img += imgchars[int(pixel/256*len(imgchars))]
-
-    print(ascii_img)
-    win32clipboard.OpenClipboard()
-    win32clipboard.EmptyClipboard()
-    win32clipboard.SetClipboardText(ascii_img)
-    win32clipboard.CloseClipboard()
+        for i, pixel in enumerate(pixels):
+            if i%width == 0:
+                ascii_img += "\n"
+            ascii_img += imgchars[int(pixel/256*len(imgchars))]
+        print(ascii_img)
 
 @imagc.command()
 @click.argument('image', nargs=1)
